@@ -2,6 +2,8 @@ package eu.malycha.microservice.patterns.infra.rabbitmq;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 
 import java.io.IOException;
 import java.time.ZoneId;
@@ -28,6 +30,10 @@ public class RabbitChannel {
         return executorService.submit(() -> publishInternal(exchangeName, routingKey, message, headers));
     }
 
+    public void attach(String queueName, RabbitConsumer consumer) throws IOException {
+        channel.basicConsume(queueName, new RabbitChannelConsumer(channel, consumer));
+    }
+
     private Void publishInternal(String exchangeName, String routingKey, byte[] message, Map<String, Object> headers) throws IOException {
         AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
             .headers(headers)
@@ -45,5 +51,32 @@ public class RabbitChannel {
 
     private static Date getTimestamp() {
         return new Date(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
+    }
+
+    public class RabbitChannelConsumer extends DefaultConsumer {
+
+        private RabbitConsumer consumer;
+
+        public RabbitChannelConsumer(Channel channel, RabbitConsumer consumer) {
+            super(channel);
+            this.consumer = consumer;
+            consumer.setChannelConsumer(this);
+        }
+
+        @Override
+        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
+            throws IOException
+        {
+            // TODO: submit to executor service
+            long deliveryTag = envelope.getDeliveryTag();
+            RabbitConsumer.ConsumptionResult result = consumer.consume(body);
+            switch (result) {
+                case COMPLETE -> channel.basicAck(deliveryTag, false);
+                case FAILURE_NON_RECOVERABLE -> channel.basicNack(deliveryTag, false, false);
+                case FAILURE_NEEDS_RETRY -> channel.basicNack(deliveryTag, false, true);
+            }
+        }
+
+        // TODO: Handle cancel, etc
     }
 }
