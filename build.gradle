@@ -15,8 +15,8 @@ repositories {
 
 dependencies {
     // Spring
-    implementation 'org.springframework.boot:spring-boot-starter-web:2.7.5'
-    implementation 'org.springframework.boot:spring-boot-configuration-processor:2.7.5'
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.7.8'
+    implementation 'org.springframework.boot:spring-boot-configuration-processor:2.7.8'
     // OpenAPI
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
     // Protobuf
@@ -35,12 +35,12 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'org.apache.commons:commons-collections4:4.4'
     // Testing
-    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.7.5'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.7.8'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
     testImplementation 'org.mockito:mockito-core:4.8.0'
     testImplementation 'org.awaitility:awaitility:4.2.0'
-    testImplementation 'io.rest-assured:rest-assured:4.5.1'
+    testImplementation 'io.rest-assured:rest-assured-all:5.3.0'
     testImplementation 'org.assertj:assertj-core:3.23.1'
 
     testImplementation 'org.testcontainers:testcontainers:1.17.6'
