@@ -4,6 +4,8 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.ZoneId;
@@ -55,7 +57,9 @@ public class RabbitChannel {
 
     public class RabbitChannelConsumer extends DefaultConsumer {
 
-        private RabbitConsumer consumer;
+        private static final Logger LOGGER = LoggerFactory.getLogger(RabbitChannelConsumer.class);
+
+        private final RabbitConsumer consumer;
 
         public RabbitChannelConsumer(Channel channel, RabbitConsumer consumer) {
             super(channel);
@@ -64,16 +68,30 @@ public class RabbitChannel {
         }
 
         @Override
-        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
-            throws IOException
-        {
-            // TODO: submit to executor service
+        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
             long deliveryTag = envelope.getDeliveryTag();
-            RabbitConsumer.ConsumptionResult result = consumer.consume(body);
-            switch (result) {
-                case COMPLETE -> channel.basicAck(deliveryTag, false);
-                case FAILURE_NON_RECOVERABLE -> channel.basicNack(deliveryTag, false, false);
-                case FAILURE_NEEDS_RETRY -> channel.basicNack(deliveryTag, false, true);
+            executorService.submit(() -> consumeAndAck(deliveryTag, body));
+        }
+
+        private void consumeAndAck(long deliveryTag, byte[] body) {
+            try {
+                RabbitConsumer.ConsumptionResult result = consumeWrapper(body);
+                switch (result) {
+                    case COMPLETE -> channel.basicAck(deliveryTag, false);
+                    case FAILURE_NON_RECOVERABLE -> channel.basicNack(deliveryTag, false, false);
+                    case FAILURE_NEEDS_RETRY -> channel.basicNack(deliveryTag, false, true);
+                }
+            } catch (IOException ex) {
+                LOGGER.error("IOException when acking message. Will be re-delivered again.", ex);
+            }
+        }
+
+        public RabbitConsumer.ConsumptionResult consumeWrapper(byte[] body) {
+            try {
+                return consumer.consume(body);
+            } catch (Exception ex) {
+                LOGGER.error("Exception when consuming message", ex);
+                return RabbitConsumer.ConsumptionResult.FAILURE_NON_RECOVERABLE;
             }
         }
 
