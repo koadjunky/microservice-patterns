@@ -9,13 +9,13 @@ public class RabbitConsumer {
         FAILURE_NON_RECOVERABLE
     }
 
-    private RabbitChannel.RabbitChannelConsumer channelConsumer;
+    private RabbitConsumeChannel.RabbitChannelConsumer channelConsumer;
 
     ConsumptionResult consume(byte[] message) {
         return ConsumptionResult.FAILURE_NEEDS_RETRY;
     }
 
-    public void setChannelConsumer(RabbitChannel.RabbitChannelConsumer channelConsumer) {
+    public void setChannelConsumer(RabbitConsumeChannel.RabbitChannelConsumer channelConsumer) {
         this.channelConsumer = channelConsumer;
     }
 }
