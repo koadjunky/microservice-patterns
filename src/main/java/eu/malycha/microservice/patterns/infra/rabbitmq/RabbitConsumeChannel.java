@@ -33,6 +33,10 @@ public class RabbitConsumeChannel {
         channel.close();
     }
 
+    public void declareQueue(String queueName, boolean durable, boolean exclusive, boolean autoDelete) throws IOException {
+        channel.queueDeclare(queueName, durable, exclusive, autoDelete, null);
+    }
+
     public void attach(String queueName, RabbitConsumer consumer) throws IOException {
         channel.basicConsume(queueName, new RabbitChannelConsumer(channel, consumer));
     }
